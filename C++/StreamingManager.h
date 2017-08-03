@@ -4,7 +4,6 @@
 
 #include "CommonTypes.h"
 #include <DirectXTex.h>
-#include <ScreenGrab.h>
 #include <iostream>
 #include <wincodec.h>
 

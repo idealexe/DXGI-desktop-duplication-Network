@@ -106,8 +106,8 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>d3d11.lib;dxgi.lib;%(AdditionalDependencies);DirectXTex.lib;DirectXTK.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>L:\Program Files\opencv\build\x64\vc14\lib;L:\Program Files\boost_1_64_0\lib64-msvc-14.1;L:\Program Files\boost_1_64_0\libs;.\DirectXTex;.\DirectXTK</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3d11.lib;dxgi.lib;%(AdditionalDependencies);DirectXTex.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>L:\Program Files\boost_1_64_0\lib64-msvc-14.1;L:\Program Files\boost_1_64_0\libs;.\DirectXTex</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <EnableDpiAwareness>true</EnableDpiAwareness>
