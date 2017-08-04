@@ -4,10 +4,17 @@
 //
 // コンストラクタ
 //
-STREAMINGMANAGER::STREAMINGMANAGER()
+STREAMINGMANAGER::STREAMINGMANAGER() :
+	m_UdpSocket(io_service)
 {
-	m_ClientAddr = "192.168.1.12";
+	m_ClientAddr = "192.168.1.12"; // 受信する端末のアドレス
 	m_Port = "3389";
+
+	// UDPソケットを作成
+	udp::resolver resolver(io_service);
+	udp::resolver::query query(udp::v4(), m_ClientAddr, m_Port);
+	m_Endpoint = *resolver.resolve(query);
+	m_UdpSocket.open(udp::v4());
 
 	// DirectXTK 用の初期化
 #if (_WIN32_WINNT >= 0x0A00 /*_WIN32_WINNT_WIN10*/)
@@ -30,6 +37,7 @@ STREAMINGMANAGER::STREAMINGMANAGER()
 //
 STREAMINGMANAGER::~STREAMINGMANAGER()
 {
+	m_UdpSocket.close();
 }
 
 //
@@ -41,7 +49,6 @@ void STREAMINGMANAGER::SendImage(ID3D11Device* device, ID3D11DeviceContext* cont
 	ScratchImage image;
 	HRESULT hr = CaptureTexture(device, context, resource, image);
 
-
 	if (SUCCEEDED(hr))
 	{
 		const Image* img = image.GetImage(0, 0, 0);
@@ -49,30 +56,23 @@ void STREAMINGMANAGER::SendImage(ID3D11Device* device, ID3D11DeviceContext* cont
 
 		// リサイズ
 		ScratchImage destImage;
-		hr = Resize(*img, 240, 150, TEX_FILTER_DEFAULT, destImage);
+		hr = Resize(*img, 192, 108, TEX_FILTER_DEFAULT, destImage);
 		img = destImage.GetImage(0, 0, 0);
 
-		// blobにメモリ上に作成したjpgの情報を格納
+		// blobにメモリ上に作成したjpgの情報をblobに格納
 		hr = SaveToWICMemory(*img, WIC_FLAGS_NONE, GUID_ContainerFormatJpeg, blob, &GUID_WICPixelFormat24bppBGR);
-	}
 
-	try
-	{
-		boost::asio::io_service io_service;
-		udp::resolver resolver(io_service);
-		udp::resolver::query query(udp::v4(), m_ClientAddr, m_Port);
-		udp::endpoint m_Receiver_endpoint = *resolver.resolve(query);
-		udp::socket m_Socket(io_service);
-		m_Socket.open(udp::v4());
-
-		// メモリ上のjpgのバイナリデータを取得して送信
-		auto p = (byte*)blob.GetBufferPointer();
-		auto size = blob.GetBufferSize();
-		std::vector<byte> jpgData(p, p+size);
-		m_Socket.send_to(boost::asio::buffer(jpgData), m_Receiver_endpoint);
-	}
-	catch (std::exception e)
-	{
-		std::cerr << e.what() << std::endl;
+		try
+		{
+			// メモリ上のjpgのバイナリデータを取得して送信
+			auto p = (byte*)blob.GetBufferPointer();
+			auto size = blob.GetBufferSize();
+			std::vector<byte> jpgData(p, p + size);
+			m_UdpSocket.send_to(boost::asio::buffer(jpgData), m_Endpoint);
+		}
+		catch (std::exception e)
+		{
+			std::cerr << e.what() << std::endl;
+		}
 	}
 }

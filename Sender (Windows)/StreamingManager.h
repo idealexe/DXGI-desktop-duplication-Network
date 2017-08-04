@@ -8,6 +8,7 @@
 #include <wincodec.h>
 
 using boost::asio::ip::udp;
+using boost::asio::ip::tcp;
 using namespace DirectX;
 
 //
@@ -15,6 +16,7 @@ using namespace DirectX;
 //
 class STREAMINGMANAGER
 {
+
 public:
 	STREAMINGMANAGER();
 	~STREAMINGMANAGER();
@@ -27,6 +29,9 @@ private:
 	// ÉÅÉìÉo
 	std::string m_ClientAddr;
 	std::string m_Port;
+	boost::asio::io_service io_service;
+	udp::endpoint m_Endpoint;
+	udp::socket m_UdpSocket;
 };
 
 #endif
