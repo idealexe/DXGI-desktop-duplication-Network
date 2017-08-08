@@ -7,7 +7,7 @@
 STREAMINGMANAGER::STREAMINGMANAGER() :
 	m_UdpSocket(io_service)
 {
-	m_ClientAddr = "192.168.1.12"; // 受信する端末のアドレス
+	m_ClientAddr = "192.168.1.5"; // 受信する端末のアドレス
 	m_Port = "3389";
 
 	// UDPソケットを作成
@@ -56,7 +56,7 @@ void STREAMINGMANAGER::SendImage(ID3D11Device* device, ID3D11DeviceContext* cont
 
 		// リサイズ
 		ScratchImage destImage;
-		hr = Resize(*img, 192, 108, TEX_FILTER_DEFAULT, destImage);
+		hr = Resize(*img, 800, 450, TEX_FILTER_DEFAULT, destImage);
 		img = destImage.GetImage(0, 0, 0);
 
 		// blobにメモリ上に作成したjpgの情報をblobに格納
@@ -68,7 +68,12 @@ void STREAMINGMANAGER::SendImage(ID3D11Device* device, ID3D11DeviceContext* cont
 			auto p = (byte*)blob.GetBufferPointer();
 			auto size = blob.GetBufferSize();
 			std::vector<byte> jpgData(p, p + size);
-			m_UdpSocket.send_to(boost::asio::buffer(jpgData), m_Endpoint);
+			//m_UdpSocket.send_to(boost::asio::buffer(jpgData), m_Endpoint);
+
+			// TCP
+			tcp::socket tcpSocket(io_service);
+			tcpSocket.connect(tcp::endpoint(boost::asio::ip::address::from_string(m_ClientAddr), 3389));
+			boost::asio::write(tcpSocket, boost::asio::buffer(jpgData));
 		}
 		catch (std::exception e)
 		{
