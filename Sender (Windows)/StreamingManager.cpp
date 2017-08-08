@@ -7,7 +7,7 @@
 STREAMINGMANAGER::STREAMINGMANAGER() :
 	m_UdpSocket(io_service)
 {
-	m_ClientAddr = "192.168.1.5"; // 受信する端末のアドレス
+	m_ClientAddr = "192.168.1.12"; // 受信する端末のアドレス
 	m_Port = "3389";
 
 	// UDPソケットを作成
