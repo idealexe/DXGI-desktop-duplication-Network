@@ -49,6 +49,7 @@ void STREAMINGMANAGER::SendImage(ID3D11Device* device, ID3D11DeviceContext* cont
 {
 	Blob blob;
 	ScratchImage image;
+	boost::system::error_code error;
 	HRESULT hr = CaptureTexture(device, context, resource, image);
 
 	if (SUCCEEDED(hr))
@@ -72,12 +73,29 @@ void STREAMINGMANAGER::SendImage(ID3D11Device* device, ID3D11DeviceContext* cont
 		try
 		{
 			// UDPëóêM
-			//m_UdpSocket.send_to(boost::asio::buffer(jpgData), m_Endpoint);
+			if (m_UdpSocket.available() > 0)
+			{
+				m_UdpSocket.send_to(boost::asio::buffer(jpgData), m_Endpoint);
+			}
 
 			// TCPëóêM
 			tcp::socket m_TcpSocket(io_service);
-			m_TcpSocket.connect(tcp::endpoint(boost::asio::ip::address::from_string(m_ClientAddr), 3389));
-			boost::asio::write(m_TcpSocket, boost::asio::buffer(jpgData));
+
+			m_TcpSocket.connect(tcp::endpoint(boost::asio::ip::address::from_string(m_ClientAddr), 3389), error);
+			if (error) {
+				std::cout << "connect failed : " << error.message() << std::endl;
+			}
+			else {
+				std::cout << "connected" << std::endl;
+			}
+
+			boost::asio::write(m_TcpSocket, boost::asio::buffer(jpgData), error);
+			if (error) {
+				std::cout << "send failed: " << error.message() << std::endl;
+			}
+			else {
+				std::cout << "send correct!" << std::endl;
+			}
 		}
 		catch (const boost::exception& ex)
 		{
