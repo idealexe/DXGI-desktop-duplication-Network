@@ -5,9 +5,10 @@
 // コンストラクタ
 //
 STREAMINGMANAGER::STREAMINGMANAGER() :
-	m_UdpSocket(io_service)
+	m_UdpSocket(io_service),
+	m_TcpSocket(io_service)
 {
-	m_ClientAddr = "192.168.1.12"; // 受信する端末のアドレス
+	m_ClientAddr = "192.168.1.5"; // 受信する端末のアドレス
 	m_Port = "3389";
 
 	// UDPソケットを作成
@@ -38,6 +39,7 @@ STREAMINGMANAGER::STREAMINGMANAGER() :
 STREAMINGMANAGER::~STREAMINGMANAGER()
 {
 	m_UdpSocket.close();
+	m_TcpSocket.close();
 }
 
 //
@@ -62,22 +64,24 @@ void STREAMINGMANAGER::SendImage(ID3D11Device* device, ID3D11DeviceContext* cont
 		// blobにメモリ上に作成したjpgの情報をblobに格納
 		hr = SaveToWICMemory(*img, WIC_FLAGS_NONE, GUID_ContainerFormatJpeg, blob, &GUID_WICPixelFormat24bppBGR);
 
+		// メモリ上のjpgのバイナリデータを取得
+		auto p = (byte*)blob.GetBufferPointer();
+		auto size = blob.GetBufferSize();
+		std::vector<byte> jpgData(p, p + size);
+
 		try
 		{
-			// メモリ上のjpgのバイナリデータを取得して送信
-			auto p = (byte*)blob.GetBufferPointer();
-			auto size = blob.GetBufferSize();
-			std::vector<byte> jpgData(p, p + size);
+			// UDP送信
 			//m_UdpSocket.send_to(boost::asio::buffer(jpgData), m_Endpoint);
 
-			// TCP
-			tcp::socket tcpSocket(io_service);
-			tcpSocket.connect(tcp::endpoint(boost::asio::ip::address::from_string(m_ClientAddr), 3389));
-			boost::asio::write(tcpSocket, boost::asio::buffer(jpgData));
+			// TCP送信
+			tcp::socket m_TcpSocket(io_service);
+			m_TcpSocket.connect(tcp::endpoint(boost::asio::ip::address::from_string(m_ClientAddr), 3389));
+			boost::asio::write(m_TcpSocket, boost::asio::buffer(jpgData));
 		}
-		catch (std::exception e)
+		catch (const boost::exception& ex)
 		{
-			std::cerr << e.what() << std::endl;
+			std::cerr << boost::diagnostic_information(ex);
 		}
 	}
 }

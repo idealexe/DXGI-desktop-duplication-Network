@@ -6,6 +6,7 @@
 #include <DirectXTex.h>
 #include <iostream>
 #include <wincodec.h>
+#include <boost/exception/diagnostic_information.hpp>
 
 using boost::asio::ip::udp;
 using boost::asio::ip::tcp;
@@ -32,6 +33,7 @@ private:
 	boost::asio::io_service io_service;
 	udp::endpoint m_Endpoint;
 	udp::socket m_UdpSocket;
+	tcp::socket m_TcpSocket;
 };
 
 #endif
