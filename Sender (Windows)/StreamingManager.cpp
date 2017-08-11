@@ -70,36 +70,24 @@ void STREAMINGMANAGER::SendImage(ID3D11Device* device, ID3D11DeviceContext* cont
 		auto size = blob.GetBufferSize();
 		std::vector<byte> jpgData(p, p + size);
 
-		try
+
+		// UDP送信
+		if (m_UdpSocket.available() > 0)
 		{
-			// UDP送信
-			if (m_UdpSocket.available() > 0)
-			{
-				m_UdpSocket.send_to(boost::asio::buffer(jpgData), m_Endpoint);
-			}
-
-			// TCP送信
-			tcp::socket m_TcpSocket(io_service);
-
-			m_TcpSocket.connect(tcp::endpoint(boost::asio::ip::address::from_string(m_ClientAddr), 3389), error);
-			if (error) {
-				std::cout << "connect failed : " << error.message() << std::endl;
-			}
-			else {
-				std::cout << "connected" << std::endl;
-			}
-
-			boost::asio::write(m_TcpSocket, boost::asio::buffer(jpgData), error);
-			if (error) {
-				std::cout << "send failed: " << error.message() << std::endl;
-			}
-			else {
-				std::cout << "send correct!" << std::endl;
-			}
+			//m_UdpSocket.send_to(boost::asio::buffer(jpgData), m_Endpoint);
 		}
-		catch (const boost::exception& ex)
-		{
-			std::cerr << boost::diagnostic_information(ex);
+
+		// TCP送信
+		tcp::socket m_TcpSocket(io_service);
+
+		m_TcpSocket.connect(tcp::endpoint(boost::asio::ip::address::from_string(m_ClientAddr), 3389), error);
+
+		boost::asio::write(m_TcpSocket, boost::asio::buffer(jpgData), error);
+		if (error) {
+			std::cout << "send failed: " << error.message() << std::endl;
+		}
+		else {
+			std::cout << "send correct!" << std::endl;
 		}
 	}
 }
