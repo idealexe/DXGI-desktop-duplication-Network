@@ -59,7 +59,8 @@ void STREAMINGMANAGER::SendImage(ID3D11Device* device, ID3D11DeviceContext* cont
 
 		// リサイズ
 		ScratchImage destImage;
-		hr = Resize(*img, 800, 450, TEX_FILTER_DEFAULT, destImage);
+		int scale = 4;
+		hr = Resize(*img, 160*scale, 90*scale, TEX_FILTER_DEFAULT, destImage);
 		img = destImage.GetImage(0, 0, 0);
 
 		// blobにメモリ上に作成したjpgの情報をblobに格納
@@ -67,7 +68,7 @@ void STREAMINGMANAGER::SendImage(ID3D11Device* device, ID3D11DeviceContext* cont
 
 		// メモリ上のjpgのバイナリデータを取得
 		auto p = (byte*)blob.GetBufferPointer();
-		auto size = blob.GetBufferSize();
+		size_t size = blob.GetBufferSize();
 		std::vector<byte> jpgData(p, p + size);
 
 
@@ -85,6 +86,8 @@ void STREAMINGMANAGER::SendImage(ID3D11Device* device, ID3D11DeviceContext* cont
 		boost::asio::write(m_TcpSocket, boost::asio::buffer(jpgData), error);
 		if (error) {
 			std::cout << "send failed: " << error.message() << std::endl;
+			std::string s = "send failed: " + error.message() + "\n";
+			OutputDebugStringA(s.c_str());
 		}
 		else {
 			std::cout << "send correct!" << std::endl;
