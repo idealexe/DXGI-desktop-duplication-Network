@@ -4,7 +4,7 @@ Unity側で受信してテクスチャとして使用することでバーチャ
 
 ## 使用方法
 1. Unity側でデスクトップ画像を表示したいオブジェクトに`DesktopReceiver.cs`をアタッチする。
-* Senderの`StreamingManager.cpp`で送信先のアドレスを指定して起動する。
+2. Senderの`StreamingManager.cpp`で送信先のアドレスを指定して起動する。
 
 ## ライセンス
 MSDNのサンプル（
