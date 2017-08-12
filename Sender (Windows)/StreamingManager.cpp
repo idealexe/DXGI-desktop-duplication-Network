@@ -59,12 +59,23 @@ void STREAMINGMANAGER::SendImage(ID3D11Device* device, ID3D11DeviceContext* cont
 
 		// リサイズ
 		ScratchImage destImage;
-		int scale = 10;
+		int scale = 5;
 		hr = Resize(*img, 160*scale, 90*scale, TEX_FILTER_DEFAULT, destImage);
 		img = destImage.GetImage(0, 0, 0);
 
 		// blobにメモリ上に作成したjpgの情報を格納
-		hr = SaveToWICMemory(*img, WIC_FLAGS_NONE, GUID_ContainerFormatJpeg, blob, &GUID_WICPixelFormat24bppBGR);
+		hr = SaveToWICMemory(*img, WIC_FLAGS_NONE, GUID_ContainerFormatJpeg, blob, &GUID_WICPixelFormat24bppBGR,
+			[&](IPropertyBag2* props)
+			{
+				PROPBAG2 options[1] = { 0 };
+				options[0].pstrName = L"ImageQuality";
+
+				VARIANT varValues[1];
+				varValues[0].vt = VT_R4;
+				varValues[0].fltVal = 0.2f;
+
+				(void)props->Write(1, options, varValues);
+			});
 
 		// メモリ上のjpgのバイナリデータを取得
 		auto p = (byte*)blob.GetBufferPointer();
