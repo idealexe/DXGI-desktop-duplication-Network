@@ -59,11 +59,11 @@ void STREAMINGMANAGER::SendImage(ID3D11Device* device, ID3D11DeviceContext* cont
 
 		// リサイズ
 		ScratchImage destImage;
-		int scale = 2;
+		int scale = 10;
 		hr = Resize(*img, 160*scale, 90*scale, TEX_FILTER_DEFAULT, destImage);
 		img = destImage.GetImage(0, 0, 0);
 
-		// blobにメモリ上に作成したjpgの情報をblobに格納
+		// blobにメモリ上に作成したjpgの情報を格納
 		hr = SaveToWICMemory(*img, WIC_FLAGS_NONE, GUID_ContainerFormatJpeg, blob, &GUID_WICPixelFormat24bppBGR);
 
 		// メモリ上のjpgのバイナリデータを取得
