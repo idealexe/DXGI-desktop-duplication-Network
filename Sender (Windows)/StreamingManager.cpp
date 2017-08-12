@@ -59,7 +59,7 @@ void STREAMINGMANAGER::SendImage(ID3D11Device* device, ID3D11DeviceContext* cont
 
 		// リサイズ
 		ScratchImage destImage;
-		int scale = 4;
+		int scale = 2;
 		hr = Resize(*img, 160*scale, 90*scale, TEX_FILTER_DEFAULT, destImage);
 		img = destImage.GetImage(0, 0, 0);
 
@@ -80,17 +80,21 @@ void STREAMINGMANAGER::SendImage(ID3D11Device* device, ID3D11DeviceContext* cont
 
 		// TCP送信
 		tcp::socket m_TcpSocket(io_service);
-
 		m_TcpSocket.connect(tcp::endpoint(boost::asio::ip::address::from_string(m_ClientAddr), 3389), error);
-
-		boost::asio::write(m_TcpSocket, boost::asio::buffer(jpgData), error);
 		if (error) {
-			std::cout << "send failed: " << error.message() << std::endl;
-			std::string s = "send failed: " + error.message() + "\n";
-			OutputDebugStringA(s.c_str());
+			std::cout << "connect failed : " << error.message() << std::endl;
+			std::string str = "connect failed: " + error.message() + "\n";
+			OutputDebugStringA(str.c_str()); // boostのエラーメッセージが日本語で出るのでStringAを使用
 		}
 		else {
-			std::cout << "send correct!" << std::endl;
+			boost::asio::write(m_TcpSocket, boost::asio::buffer(jpgData), error);
+			if (error) {
+				std::string str = "send failed: " + error.message() + "\n";
+				OutputDebugStringA(str.c_str());
+			}
+			else {
+				OutputDebugStringA("send correct!\n");
+			}
 		}
 	}
 }
