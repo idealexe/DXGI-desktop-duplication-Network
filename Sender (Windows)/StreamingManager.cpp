@@ -10,6 +10,7 @@ STREAMINGMANAGER::STREAMINGMANAGER() :
 {
 	m_ClientAddr = "192.168.1.5"; // 受信する端末のアドレス
 	m_Port = "3389";
+	m_ImageQuality = 0.5f;
 
 	// UDPソケットを作成
 	udp::resolver resolver(io_service);
@@ -59,7 +60,7 @@ void STREAMINGMANAGER::SendImage(ID3D11Device* device, ID3D11DeviceContext* cont
 
 		// リサイズ
 		ScratchImage destImage;
-		int scale = 5;
+		int scale = 10;
 		hr = Resize(*img, 160*scale, 90*scale, TEX_FILTER_DEFAULT, destImage);
 		img = destImage.GetImage(0, 0, 0);
 
@@ -72,7 +73,7 @@ void STREAMINGMANAGER::SendImage(ID3D11Device* device, ID3D11DeviceContext* cont
 
 				VARIANT varValues[1];
 				varValues[0].vt = VT_R4;
-				varValues[0].fltVal = 0.2f;
+				varValues[0].fltVal = m_ImageQuality;
 
 				(void)props->Write(1, options, varValues);
 			});

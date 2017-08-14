@@ -34,6 +34,7 @@ private:
 	udp::endpoint m_Endpoint;
 	udp::socket m_UdpSocket;
 	tcp::socket m_TcpSocket;
+	float m_ImageQuality;
 };
 
 #endif
