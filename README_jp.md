@@ -10,3 +10,7 @@ Unity側で受信してテクスチャとして使用することでバーチャ
 MSDNのサンプル（
 https://code.msdn.microsoft.com/windowsdesktop/Desktop-Duplication-Sample-da4c696a
 ）をベースに作成しているのでMS-LPLライセンスに準拠します。
+
+## 参考資料
+* [ネットワーク - TCP - boostjp](https://boostjp.github.io/tips/network/tcp.html)
+* [DirectXTex · Microsoft/DirectXTex Wiki](https://github.com/Microsoft/DirectXTex/wiki/DirectXTex)
