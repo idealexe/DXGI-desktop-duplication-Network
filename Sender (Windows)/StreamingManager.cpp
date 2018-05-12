@@ -5,20 +5,19 @@
 // コンストラクタ
 //
 STREAMINGMANAGER::STREAMINGMANAGER() :
-	m_UdpSocket(io_service),
 	m_TcpSocket(io_service)
 {
-	m_ClientAddr = "192.168.1.5"; // 受信する端末のアドレス
-	m_Port = "3389";
-	m_ImageQuality = 0.5f;
+	m_ClientAddr = "192.168.43.2"; // デスクトップ画像の送信先端末のアドレス
+	m_Port = 3389;
+	m_EndPoint = tcp::endpoint(boost::asio::ip::address::from_string(m_ClientAddr), m_Port);
+	m_ImageQuality = 0.2f;  // jpeg圧縮の画質
+	m_ResizeScale = 0.2f;  // リサイズ倍率（等倍で1920x1080）
 
-	// UDPソケットを作成
-	udp::resolver resolver(io_service);
-	udp::resolver::query query(udp::v4(), m_ClientAddr, m_Port);
-	m_Endpoint = *resolver.resolve(query);
-	m_UdpSocket.open(udp::v4());
 
+	//
 	// DirectXTK 用の初期化
+	// https://github.com/Microsoft/DirectXTex/wiki/WIC-I-O-Functions
+	//
 #if (_WIN32_WINNT >= 0x0A00 /*_WIN32_WINNT_WIN10*/)
 	Microsoft::WRL::Wrappers::RoInitializeWrapper initialize(RO_INIT_MULTITHREADED);
 	if (FAILED(initialize))
@@ -39,7 +38,6 @@ STREAMINGMANAGER::STREAMINGMANAGER() :
 //
 STREAMINGMANAGER::~STREAMINGMANAGER()
 {
-	m_UdpSocket.close();
 	m_TcpSocket.close();
 }
 
@@ -60,8 +58,7 @@ void STREAMINGMANAGER::SendImage(ID3D11Device* device, ID3D11DeviceContext* cont
 
 		// リサイズ
 		ScratchImage destImage;
-		int scale = 10;
-		hr = Resize(*img, 160*scale, 90*scale, TEX_FILTER_DEFAULT, destImage);
+		hr = Resize(*img, 1920 * m_ResizeScale, 1080 * m_ResizeScale, TEX_FILTER_DEFAULT, destImage);
 		img = destImage.GetImage(0, 0, 0);
 
 		// blobにメモリ上に作成したjpgの情報を格納
@@ -82,29 +79,33 @@ void STREAMINGMANAGER::SendImage(ID3D11Device* device, ID3D11DeviceContext* cont
 		auto p = (byte*)blob.GetBufferPointer();
 		size_t size = blob.GetBufferSize();
 		std::vector<byte> jpgData(p, p + size);
+		OutputDebugStringA((std::to_string(size) + "bytes\n").c_str());
 
-
-		// UDP送信
-		if (m_UdpSocket.available() > 0)
-		{
-			//m_UdpSocket.send_to(boost::asio::buffer(jpgData), m_Endpoint);
-		}
-
+		//
 		// TCP送信
+		// 参考：https://boostjp.github.io/tips/network/tcp.html
+		//
 		tcp::socket m_TcpSocket(io_service);
-		m_TcpSocket.connect(tcp::endpoint(boost::asio::ip::address::from_string(m_ClientAddr), 3389), error);
-		if (error) {
-			std::cout << "connect failed : " << error.message() << std::endl;
+		m_TcpSocket.connect(m_EndPoint, error);
+		if (error) 
+		{
+			// 接続失敗
 			std::string str = "connect failed: " + error.message() + "\n";
 			OutputDebugStringA(str.c_str()); // boostのエラーメッセージが日本語で出るのでStringAを使用
 		}
-		else {
+		else
+		{
+			// 接続成功
 			boost::asio::write(m_TcpSocket, boost::asio::buffer(jpgData), error);
-			if (error) {
+			if (error)
+			{
+				// 送信失敗
 				std::string str = "send failed: " + error.message() + "\n";
 				OutputDebugStringA(str.c_str());
 			}
-			else {
+			else
+			{
+				// 送信成功
 				OutputDebugStringA("send correct!\n");
 			}
 		}

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Net;
 using System.Net.Sockets;
 using UnityEngine;
@@ -10,18 +10,21 @@ public class StateObject
     public byte[] buffer = new byte[1024 * 1024];
     public byte[] imgBuffer = new byte[1024 * 1024];
     public int writeOffset = 0;
+    public int receiveSize = 0;
 }
 
 
 public class DesktopReceiver : MonoBehaviour
 {
-    public static int port = 3389; // 一般的なリモートデスクトップのポートに合わせた
+    //
+    // TcpListener参考：https://msdn.microsoft.com/ja-jp/library/system.net.sockets.tcplistener
+    //
+    public int port = 3389; // 一般的なリモートデスクトップのポートに合わせた
     private IPEndPoint endPoint;
-    private UdpClient udpClient;
-    private const int MAX_BUFFER_SIZE = 1024 * 1024; // 1MB
-    private byte[] imgBuffer = new byte[MAX_BUFFER_SIZE]; // 受信した画像データを格納するバッファ
-    private byte[] udpBuffer = new byte[1024];
-    private static TcpListener tcpServer;
+    private TcpListener tcpServer;
+
+    private const int MAX_BUFFER_SIZE = 1024 * 1024;
+    private Byte[] imgBuffer = new Byte[MAX_BUFFER_SIZE];   // 受信した画像データを格納するバッファ
     private bool isReceiving = false;
 
 
@@ -35,36 +38,28 @@ public class DesktopReceiver : MonoBehaviour
     // 初期化
     void Start()
     {
-        // UDPクライアントの作成
-        endPoint = new IPEndPoint(IPAddress.Any, port);
-        udpClient = new UdpClient(endPoint);
+        OVRManager.cpuLevel = 0;
+        OVRManager.gpuLevel = 0;
 
-        // TCP
+        endPoint = new IPEndPoint(IPAddress.Any, port);
         tcpServer = new TcpListener(endPoint);
         tcpServer.Start();
-
-        // テクスチャ更新
-        UpdateTexture();
     }
 
 
     // 毎フレーム行う処理
     void Update()
     {
-        // UDP受信
-        while (udpClient.Available > 0)
-        {
-            udpBuffer = udpClient.Receive(ref endPoint);
-        }
-
-        // TCP
+        //
+        // ブロッキングで受信するとUnity全体が止まってしまうので非同期で接続を行う
+        //
         if (!isReceiving)
         {
+            UpdateTexture();
             tcpServer.BeginAcceptTcpClient(new AsyncCallback(DoAcceptTcpClientCallback), tcpServer); // 非同期で接続待機を開始
             isReceiving = true;
         }
-
-        UpdateTexture();
+        //UpdateTexture();
     }
 
 
@@ -87,17 +82,18 @@ public class DesktopReceiver : MonoBehaviour
     // 受信処理
     public void DoReceiveCallback(IAsyncResult ar)
     {
-        Debug.Log("Start Receive Callback");
+        //Debug.Log("Start Receive Callback");
 
         StateObject state = (StateObject)ar.AsyncState;
         NetworkStream stream = state.stream;
-        int size = stream.EndRead(ar); // 読み込んだサイズを取得
+        int size = stream.EndRead(ar);  // 読み込んだサイズを取得
 
         if (0 < size)
         {
-            Debug.Log(size + " bytes");
+            state.receiveSize += size;
+            //Debug.Log("Receive: " + size + " bytes");
             Array.Copy(state.buffer, 0, state.imgBuffer, state.writeOffset, size); // state.imgBufferに追加していく
-            Debug.Log("writeOffset: " + state.writeOffset);
+            //Debug.Log("writeOffset: " + state.writeOffset);
             state.writeOffset += size;
             // 読み込むデータが無くなるまで再帰的に読み込む
             stream.BeginRead(state.buffer, 0, MAX_BUFFER_SIZE, new AsyncCallback(DoReceiveCallback), state);
@@ -105,7 +101,8 @@ public class DesktopReceiver : MonoBehaviour
         else
         {
             Array.Copy(state.imgBuffer, imgBuffer, state.imgBuffer.Length);
-            Debug.Log("receive done!");
+            //Debug.Log(state.receiveSize + " bytes receive done!");
+            stream.Flush();
             stream.Close();
             isReceiving = false;
         }
@@ -117,7 +114,8 @@ public class DesktopReceiver : MonoBehaviour
     {
         Destroy(GetComponent<Renderer>().material.mainTexture); // 前のテクスチャを明示的に破棄してメモリ解放
         Texture2D tex = new Texture2D(2, 2); // サイズはロードした画像データで上書きされるので適当
-        bool isReadable = tex.LoadImage(imgBuffer, true);
+        bool isReadable = tex.LoadImage(imgBuffer);
+
         if (isReadable)
         {
             GetComponent<Renderer>().material.mainTexture = tex;
@@ -126,7 +124,7 @@ public class DesktopReceiver : MonoBehaviour
 
 
     // バッファの両端を表示
-    public void printBuffer(byte[] buffer, int size)
+    public void PrintBuffer(byte[] buffer, int size)
     {
         byte[] SOI = new byte[2]; // Start of Image
         byte[] EOI = new byte[2]; // End of Image
@@ -140,7 +138,7 @@ public class DesktopReceiver : MonoBehaviour
     // 終了時
     private void OnApplicationQuit()
     {
-        udpClient.Close();
         tcpServer.Stop();
+        Debug.Log("Stop server");
     }
 }
